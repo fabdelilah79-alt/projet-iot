@@ -24,7 +24,8 @@ pour mesurer une veille, faire passer le fil plusieurs fois dans le tore et rég
 - **Puissance max par prise** : deux mesures consécutives au-dessus (ou une seule au-dessus de 1,5 × max)
   → la prise est coupée et **verrouillée** jusqu'au réarmement.
 - **Puissance totale du kit** (2 300 W par défaut, disjoncteur 10 A) : au-delà, la prise allumée la moins
-  prioritaire est coupée (une coupure toutes les 5 s au plus).
+  prioritaire est coupée (une coupure toutes les 5 s au plus) ; une prise qui vient d'être allumée et
+  n'a pas encore été mesurée fait partie des candidates (c'est souvent elle qui a provoqué le dépassement).
 - **Délai minimum entre commutations** : une commande trop rapide est retardée (protège relais et moteurs).
 
 ## 7.3 Délestage par priorités (bloc « délester … »)
@@ -84,7 +85,7 @@ situation dure (60 mesures), elle devient la nouvelle normale (**apprentissage e
   Le logarithme rend la distance relative (9 W et 12 W sont aussi « loin » que 900 W et 1 200 W) ; les
   échelles 0,12 et 0,08 équilibrent les deux caractéristiques.
 - **Décision** : les k exemples les plus proches (k = 3 par défaut) votent ; si le plus proche est à une
-  distance supérieure au seuil (3 par défaut), l'appareil est déclaré **inconnu**. Si P < 1 W : aucun
+  distance supérieure au seuil (2 par défaut), l'appareil est déclaré **inconnu**. Si P < 1 W : aucun
   appareil.
 - **Limites** à discuter : deux appareils de même puissance et même FP sont confondus ; un appareil à
   plusieurs régimes (lave-linge) nécessite plusieurs exemples ; l'IA ne « comprend » rien, elle compare.

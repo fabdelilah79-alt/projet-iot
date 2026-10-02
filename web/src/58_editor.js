@@ -336,7 +336,6 @@
       this.ws.clear();
       root.Blockly.serialization.workspaces.load(ex.build(), this.ws);
       this.ws.cleanUp(); // range les scripts en colonne, sans chevauchement
-      this.ws.scrollCenter();
       this.R.name.value = ex.title.slice(0, 40);
       U.store.set('ws.name', this.R.name.value);
       this.saveLocal();

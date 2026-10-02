@@ -309,14 +309,17 @@ void KitCore::tick1s(double now) {
 
 void KitCore::safetyTotal(double now) {
   if (now < safetyHold_) return;
+  // relais ouvert = aucun courant : on ignore la dernière mesure, peut-être antérieure à la coupure
   double tot = 0;
   for (int k = 0; k < NOUT; k++)
-    if (out[k].online && !isnan(out[k].rawP)) tot += out[k].rawP;
+    if (out[k].online && rel_.isOn(k) && !isnan(out[k].rawP)) tot += out[k].rawP;
   if (tot <= cfg_.maxTotalW) return;
   int best = -1;
   for (int k = 0; k < NOUT; k++) {
     if (!rel_.isOn(k) || rel_.isLatched(k)) continue;
-    if (!(out[k].rawP > 1)) continue;
+    // une prise allumée depuis moins d'une période de mesure n'est pas encore mesurée : elle reste candidate
+    bool fresh = now - rel_.lastChange(k) < cfg_.sampleMs + 1000;
+    if (!(out[k].rawP > 1) && !fresh) continue;
     if (best < 0 || cfg_.out[k].priority > cfg_.out[best].priority ||
         (cfg_.out[k].priority == cfg_.out[best].priority && k > best))
       best = k;
@@ -338,7 +341,7 @@ void KitCore::shedStep(double lim, double now) {
   // puissance "effective" : les prises délestées comptent pour 0 (même si la coupure est en attente)
   double tot = 0;
   for (int k = 0; k < NOUT; k++) {
-    if (out[k].shed) continue;
+    if (out[k].shed || !rel_.isOn(k)) continue;
     if (out[k].online && !isnan(out[k].p)) tot += out[k].p;
   }
   if (tot > lim) {

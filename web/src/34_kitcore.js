@@ -214,13 +214,16 @@
 
     safetyTotal(now) {
       if (now < this.safetyHold) return;
+      // relais ouvert = aucun courant : on ignore la dernière mesure, peut-être antérieure à la coupure
       let tot = 0;
-      for (const o of this.out) if (o.online && !Number.isNaN(o.rawP)) tot += o.rawP;
+      for (let k = 0; k < NOUT; k++) { const o = this.out[k]; if (o.online && this.rel.isOn(k) && !Number.isNaN(o.rawP)) tot += o.rawP; }
       if (tot <= this.cfg.safety.maxTotalW) return;
       let best = -1;
       for (let k = 0; k < NOUT; k++) {
         if (!this.rel.isOn(k) || this.rel.isLatched(k)) continue;
-        if (!(this.out[k].rawP > 1)) continue;
+        // une prise allumée depuis moins d'une période de mesure n'est pas encore mesurée : elle reste candidate
+        const fresh = now - this.rel.lastChange(k) < this.cfg.measure.sampleMs + 1000;
+        if (!(this.out[k].rawP > 1) && !fresh) continue;
         const pk = this.cfg.outlets[k].priority;
         if (best < 0 || pk > this.cfg.outlets[best].priority || (pk === this.cfg.outlets[best].priority && k > best)) best = k;
       }
@@ -238,7 +241,7 @@
       if (now < this.shedHold) return;
       const SRC = EL.relays.SRC;
       let tot = 0;
-      for (const o of this.out) { if (o.shed) continue; if (o.online && !Number.isNaN(o.p)) tot += o.p; }
+      for (let k = 0; k < NOUT; k++) { const o = this.out[k]; if (o.shed || !this.rel.isOn(k)) continue; if (o.online && !Number.isNaN(o.p)) tot += o.p; }
       if (tot > lim) {
         let best = -1;
         for (let k = 0; k < NOUT; k++) {

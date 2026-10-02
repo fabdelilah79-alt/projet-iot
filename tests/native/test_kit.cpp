@@ -162,6 +162,24 @@ int main() {
   CHECK(kit.out[2].shed);
   kit.tick1s(t + 365200);  // plus d'appel au délestage depuis 40 s : la prise redevient pilotable
   CHECK(!kit.out[2].shed);
+  // sécurité totale : une prise allumée à l'instant (pas encore mesurée) est coupée en priorité
+  t = 2000000;
+  for (int k = 0; k < 4; k++) kit.rearm(k);
+  kit.userRelay(0, true, Relays::SRC_USER, t); kit.userRelay(1, true, Relays::SRC_USER, t);
+  kit.userRelay(2, false, Relays::SRC_USER, t); kit.userRelay(3, false, Relays::SRC_USER, t);
+  kit.onMeasurement(0, meas(300), t + 3000); kit.onMeasurement(1, meas(2100), t + 3000);
+  kit.onMeasurement(2, meas(0), t + 3000); kit.onMeasurement(3, meas(0), t + 3000);
+  CHECK(kit.userRelay(2, true, Relays::SRC_USER, t + 3000) == Relays::RL_OK);
+  kit.tick1s(t + 3500);  // 2400 W > 2300 W : la prise 3 (priorité 4, pas encore mesurée) est coupée, pas le salon
+  CHECK(!rel.isOn(2) && rel.isOn(0) && rel.isOn(1));
+  // délestage et sécurité au même instant : la prise délestée ne compte plus, aucune autre n'est coupée
+  t = 2100000;
+  kit.userRelay(2, true, Relays::SRC_USER, t);
+  kit.onMeasurement(0, meas(300), t + 3000); kit.onMeasurement(1, meas(1800), t + 3000);
+  kit.onMeasurement(2, meas(1000), t + 3000);
+  kit.shedStep(3000, t + 3000);  // 3100 W > 3000 W : prise 3 délestée
+  kit.tick1s(t + 3000);          // sécurité : 300 + 1800 = 2100 W, rien d'autre n'est coupé
+  CHECK(!rel.isOn(2) && rel.isOn(0) && rel.isOn(1));
   printf("  journal (%d entrées), dernier : %s\n", kit.logCount(), kit.logAt(0)->msg);
   printf("\n%d vérifications réussies, %d échecs\n", g_pass, g_fail);
   return g_fail ? 1 : 0;

@@ -12,7 +12,7 @@
     return {
       kitName: 'Kit EnergyLab',
       outlets: names.map(function (n, k) {
-        return { name: n, icon: icons[k], enabled: true, maxPower: 2000, pzemAlarm: 2300, priority: prio[k], bootState: 0, minSwitchS: 2, standbyW: 3, ctTurns: 1, calU: 1, calI: 1 };
+        return { name: n, icon: icons[k], enabled: true, maxPower: 2300, pzemAlarm: 2300, priority: prio[k], bootState: 0, minSwitchS: 2, standbyW: 3, ctTurns: 1, calU: 1, calI: 1 };
       }),
       net: { wifiMode: 0, staSsid: '', staPass: '', apSsid: 'EnergyLab-' + (kitId || 'SIMU'), apPass: 'energie123', apAlways: true, hostname: 'energylab', tzMin: 60, tzAuto: true },
       tariff: { priceHP: 1.2, priceHC: 0.9, hpHc: false, hcStart: 22 * 60, hcEnd: 6 * 60, currency: 'DH', co2: 600, contractW: 3000 },
@@ -20,7 +20,7 @@
       env: { tempSet: 20, tempHyst: 0.5, lightThr: 30, presenceS: 60, dhtOn: true, ldrOn: true, pirOn: true, ldrInvert: false },
       hw: { oledType: 0, buzzerOn: true, relayActiveLow: true },
       safety: { maxTotalW: 2300, hardMaxOutletW: 2300, minSwitchFloorS: 1 },
-      ai: { anomalyZ: 4, knnK: 3, knnMaxDist: 3 },
+      ai: { anomalyZ: 4, knnK: 3, knnMaxDist: 2 },
       peda: { pin: '1234', perms: PERM.RELAY | PERM.PARAMS | PERM.PROGRAM | PERM.KNN | PERM.REARM, scaffold: 1, progAutostart: false },
       mqtt: { on: false, host: '', port: 1883, user: '', pass: '', base: 'energylab' }
     };

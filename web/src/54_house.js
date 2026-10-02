@@ -255,7 +255,7 @@
         r.rearm.classList.toggle('hidden', !o.latched);
         const app = EL.applianceName(o.appliance);
         r.sub.textContent = o.latched ? '⛔ protection : ' + o.latchReason : (app ? '🧠 reconnu : ' + app : (o.on ? 'prise allumée' : 'prise éteinte'));
-        const max = oc ? oc.maxPower : 2000;
+        const max = oc ? oc.maxPower : 2300;
         r.bar.style.width = Math.min(100, (o.p || 0) / max * 100).toFixed(1) + '%';
         U.clear(r.meta);
         r.meta.append(

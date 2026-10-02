@@ -48,7 +48,7 @@
         '<p class="note tip">Sur téléphone, si le système propose « Se connecter au réseau », acceptez : l’application s’ouvre. Pensez à désactiver les données mobiles si la page ne s’affiche pas.</p>',
         '<h2 id="h-securite">⚠️ Règles de sécurité</h2><ul>',
         '<li>Le kit fonctionne en <b>230 V</b> : seul l’enseignant ouvre le boîtier, <b>hors tension</b> (débranché).</li>',
-        '<li>Ne jamais brancher d’appareil de plus de 2 000 W ni dépasser 10 A au total (disjoncteur du kit).</li>',
+        '<li>Ne jamais dépasser 2 300 W (10 A) au total : c’est la limite du disjoncteur du kit.</li>',
         '<li>Les apprenants ne manipulent que les prises du kit et l’application.</li>',
         '<li>Vérifier régulièrement le bouton test du disjoncteur différentiel 30 mA.</li>',
         '<li>Ne pas laisser un appareil chauffant (bouilloire, fer, radiateur) sans surveillance.</li>',

@@ -760,7 +760,7 @@
     return {
       kitName: 'Kit EnergyLab',
       outlets: names.map(function (n, k) {
-        return { name: n, icon: icons[k], enabled: true, maxPower: 2000, pzemAlarm: 2300, priority: prio[k], bootState: 0, minSwitchS: 2, standbyW: 3, ctTurns: 1, calU: 1, calI: 1 };
+        return { name: n, icon: icons[k], enabled: true, maxPower: 2300, pzemAlarm: 2300, priority: prio[k], bootState: 0, minSwitchS: 2, standbyW: 3, ctTurns: 1, calU: 1, calI: 1 };
       }),
       net: { wifiMode: 0, staSsid: '', staPass: '', apSsid: 'EnergyLab-' + (kitId || 'SIMU'), apPass: 'energie123', apAlways: true, hostname: 'energylab', tzMin: 60, tzAuto: true },
       tariff: { priceHP: 1.2, priceHC: 0.9, hpHc: false, hcStart: 22 * 60, hcEnd: 6 * 60, currency: 'DH', co2: 600, contractW: 3000 },
@@ -768,7 +768,7 @@
       env: { tempSet: 20, tempHyst: 0.5, lightThr: 30, presenceS: 60, dhtOn: true, ldrOn: true, pirOn: true, ldrInvert: false },
       hw: { oledType: 0, buzzerOn: true, relayActiveLow: true },
       safety: { maxTotalW: 2300, hardMaxOutletW: 2300, minSwitchFloorS: 1 },
-      ai: { anomalyZ: 4, knnK: 3, knnMaxDist: 3 },
+      ai: { anomalyZ: 4, knnK: 3, knnMaxDist: 2 },
       peda: { pin: '1234', perms: PERM.RELAY | PERM.PARAMS | PERM.PROGRAM | PERM.KNN | PERM.REARM, scaffold: 1, progAutostart: false },
       mqtt: { on: false, host: '', port: 1883, user: '', pass: '', base: 'energylab' }
     };
@@ -1374,13 +1374,16 @@
 
     safetyTotal(now) {
       if (now < this.safetyHold) return;
+      // relais ouvert = aucun courant : on ignore la dernière mesure, peut-être antérieure à la coupure
       let tot = 0;
-      for (const o of this.out) if (o.online && !Number.isNaN(o.rawP)) tot += o.rawP;
+      for (let k = 0; k < NOUT; k++) { const o = this.out[k]; if (o.online && this.rel.isOn(k) && !Number.isNaN(o.rawP)) tot += o.rawP; }
       if (tot <= this.cfg.safety.maxTotalW) return;
       let best = -1;
       for (let k = 0; k < NOUT; k++) {
         if (!this.rel.isOn(k) || this.rel.isLatched(k)) continue;
-        if (!(this.out[k].rawP > 1)) continue;
+        // une prise allumée depuis moins d'une période de mesure n'est pas encore mesurée : elle reste candidate
+        const fresh = now - this.rel.lastChange(k) < this.cfg.measure.sampleMs + 1000;
+        if (!(this.out[k].rawP > 1) && !fresh) continue;
         const pk = this.cfg.outlets[k].priority;
         if (best < 0 || pk > this.cfg.outlets[best].priority || (pk === this.cfg.outlets[best].priority && k > best)) best = k;
       }
@@ -1398,7 +1401,7 @@
       if (now < this.shedHold) return;
       const SRC = EL.relays.SRC;
       let tot = 0;
-      for (const o of this.out) { if (o.shed) continue; if (o.online && !Number.isNaN(o.p)) tot += o.p; }
+      for (let k = 0; k < NOUT; k++) { const o = this.out[k]; if (o.shed || !this.rel.isOn(k)) continue; if (o.online && !Number.isNaN(o.p)) tot += o.p; }
       if (tot > lim) {
         let best = -1;
         for (let k = 0; k < NOUT; k++) {
@@ -4659,7 +4662,7 @@
         r.rearm.classList.toggle('hidden', !o.latched);
         const app = EL.applianceName(o.appliance);
         r.sub.textContent = o.latched ? '⛔ protection : ' + o.latchReason : (app ? '🧠 reconnu : ' + app : (o.on ? 'prise allumée' : 'prise éteinte'));
-        const max = oc ? oc.maxPower : 2000;
+        const max = oc ? oc.maxPower : 2300;
         r.bar.style.width = Math.min(100, (o.p || 0) / max * 100).toFixed(1) + '%';
         U.clear(r.meta);
         r.meta.append(
@@ -5408,7 +5411,6 @@
       this.ws.clear();
       root.Blockly.serialization.workspaces.load(ex.build(), this.ws);
       this.ws.cleanUp(); // range les scripts en colonne, sans chevauchement
-      this.ws.scrollCenter();
       this.R.name.value = ex.title.slice(0, 40);
       U.store.set('ws.name', this.R.name.value);
       this.saveLocal();
@@ -6002,7 +6004,7 @@
         { type: 'action', text: 'Onglet « Mesures », prise 2 : réglez la « puissance max » à 50 W.', check: function () { return cfg() && cfg().outlets[1].maxPower <= 50; }, hints: ['Saisissez 50 puis « Appliquer » dans le panneau des paramètres de la prise 2.'] },
         { type: 'action', text: 'Faites fonctionner sur la prise 2 un appareil de plus de 50 W : la prise doit se couper et se verrouiller.', check: function (s) { return s.outlets[1].latched; }, hints: ['Une lampe halogène, un ventilateur ou une bouilloire conviennent.', 'Le kit coupe après deux mesures au-dessus du seuil (ou immédiatement au-delà de 1,5 × le seuil).'] },
         { type: 'qcm', text: 'Que signifie « prise verrouillée » ?', options: ['Elle reste coupée jusqu’à un réarmement volontaire', 'Elle se rallume seule après 10 s', 'Le capteur est en panne'], correct: 0, explain: 'Comme un disjoncteur : on ne remet pas sous tension sans avoir trouvé la cause.' },
-        { type: 'action', text: 'Remettez la puissance max de la prise 2 à 2 000 W, puis réarmez la prise (bouton « Réarmer »).', check: function (s) { return cfg() && cfg().outlets[1].maxPower >= 1500 && !s.outlets[1].latched; }, hints: ['Le bouton « Réarmer » apparaît sur la carte de la prise verrouillée (onglet Maison).'] }
+        { type: 'action', text: 'Remettez la puissance max de la prise 2 à 2 300 W (valeur d’origine), puis réarmez la prise (bouton « Réarmer »).', check: function (s) { return cfg() && cfg().outlets[1].maxPower >= 1500 && !s.outlets[1].latched; }, hints: ['Le bouton « Réarmer » apparaît sur la carte de la prise verrouillée (onglet Maison).'] }
       ]
     },
     {
@@ -7173,7 +7175,7 @@
         '<p class="note tip">Sur téléphone, si le système propose « Se connecter au réseau », acceptez : l’application s’ouvre. Pensez à désactiver les données mobiles si la page ne s’affiche pas.</p>',
         '<h2 id="h-securite">⚠️ Règles de sécurité</h2><ul>',
         '<li>Le kit fonctionne en <b>230 V</b> : seul l’enseignant ouvre le boîtier, <b>hors tension</b> (débranché).</li>',
-        '<li>Ne jamais brancher d’appareil de plus de 2 000 W ni dépasser 10 A au total (disjoncteur du kit).</li>',
+        '<li>Ne jamais dépasser 2 300 W (10 A) au total : c’est la limite du disjoncteur du kit.</li>',
         '<li>Les apprenants ne manipulent que les prises du kit et l’application.</li>',
         '<li>Vérifier régulièrement le bouton test du disjoncteur différentiel 30 mA.</li>',
         '<li>Ne pas laisser un appareil chauffant (bouilloire, fer, radiateur) sans surveillance.</li>',

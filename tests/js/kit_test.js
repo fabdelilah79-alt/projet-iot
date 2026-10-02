@@ -147,6 +147,26 @@ CHECK(kit.out[2].shed, 'délai doublé non écoulé');
 kit.tick1s(t + 365200);
 CHECK(!kit.out[2].shed, 'délestage abandonné');
 
+// sécurité totale : une prise allumée à l'instant (pas encore mesurée) est coupée en priorité
+t = 2000000;
+for (let k = 0; k < 4; k++) kit.rearm(k);
+kit.userRelay(0, true, SRC.USER, t); kit.userRelay(1, true, SRC.USER, t);
+kit.userRelay(2, false, SRC.USER, t); kit.userRelay(3, false, SRC.USER, t);
+kit.onMeasurement(0, meas(300), t + 3000); kit.onMeasurement(1, meas(2100), t + 3000);
+kit.onMeasurement(2, meas(0), t + 3000); kit.onMeasurement(3, meas(0), t + 3000);
+CHECK(kit.userRelay(2, true, SRC.USER, t + 3000) === RES.OK, 'allumage du convecteur');
+kit.tick1s(t + 3500);
+CHECK(!rel.isOn(2) && rel.isOn(0) && rel.isOn(1), 'la prise qui vient de s’allumer est coupée en priorité');
+
+// délestage et sécurité au même instant : la prise délestée ne compte plus, aucune autre n'est coupée
+t = 2100000;
+kit.userRelay(2, true, SRC.USER, t);
+kit.onMeasurement(0, meas(300), t + 3000); kit.onMeasurement(1, meas(1800), t + 3000);
+kit.onMeasurement(2, meas(1000), t + 3000);
+kit.shedStep(3000, t + 3000);
+kit.tick1s(t + 3000);
+CHECK(!rel.isOn(2) && rel.isOn(0) && rel.isOn(1), 'délestage puis sécurité au même instant : une seule coupure');
+
 console.log('  journal (' + kit.logs.length + ' entrées), dernier : ' + kit.logs[kit.logs.length - 1].msg);
 console.log('\n' + pass + ' vérifications réussies, ' + fail + ' échecs');
 process.exitCode = fail ? 1 : 0;

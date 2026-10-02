@@ -32,7 +32,7 @@ void configDefaults(Config& c, const char* kitId) {
     copyStr(o.name, sizeof o.name, names[k]);
     copyStr(o.icon, sizeof o.icon, icons[k]);
     o.enabled = true;
-    o.maxPower = 2000;
+    o.maxPower = 2300;
     o.pzemAlarm = 2300;
     o.priority = prio[k];
     o.bootState = 0;
@@ -76,7 +76,7 @@ void configDefaults(Config& c, const char* kitId) {
   c.minSwitchFloorS = 1;
   c.anomalyZ = 4;
   c.knnK = 3;
-  c.knnMaxDist = 3;
+  c.knnMaxDist = 2;
   copyStr(c.pin, sizeof c.pin, "1234");
   c.perms = PERM_RELAY | PERM_PARAMS | PERM_PROGRAM | PERM_KNN | PERM_REARM;
   c.scaffold = 1;

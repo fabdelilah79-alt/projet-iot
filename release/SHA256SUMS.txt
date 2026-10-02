@@ -1,1 +1,1 @@
-8f809a61557a16c6fe7aae909e1b0f0208c5a99699d4eedba76577d866edbad0  energylab-esp32-full.bin
+3633b9f72bc9a1f5ab5b726e5e5d37fbe827a555f867624b72550694c35052fc  energylab-esp32-full.bin

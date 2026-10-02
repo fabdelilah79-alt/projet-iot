@@ -98,7 +98,7 @@
         { type: 'action', text: 'Onglet « Mesures », prise 2 : réglez la « puissance max » à 50 W.', check: function () { return cfg() && cfg().outlets[1].maxPower <= 50; }, hints: ['Saisissez 50 puis « Appliquer » dans le panneau des paramètres de la prise 2.'] },
         { type: 'action', text: 'Faites fonctionner sur la prise 2 un appareil de plus de 50 W : la prise doit se couper et se verrouiller.', check: function (s) { return s.outlets[1].latched; }, hints: ['Une lampe halogène, un ventilateur ou une bouilloire conviennent.', 'Le kit coupe après deux mesures au-dessus du seuil (ou immédiatement au-delà de 1,5 × le seuil).'] },
         { type: 'qcm', text: 'Que signifie « prise verrouillée » ?', options: ['Elle reste coupée jusqu’à un réarmement volontaire', 'Elle se rallume seule après 10 s', 'Le capteur est en panne'], correct: 0, explain: 'Comme un disjoncteur : on ne remet pas sous tension sans avoir trouvé la cause.' },
-        { type: 'action', text: 'Remettez la puissance max de la prise 2 à 2 000 W, puis réarmez la prise (bouton « Réarmer »).', check: function (s) { return cfg() && cfg().outlets[1].maxPower >= 1500 && !s.outlets[1].latched; }, hints: ['Le bouton « Réarmer » apparaît sur la carte de la prise verrouillée (onglet Maison).'] }
+        { type: 'action', text: 'Remettez la puissance max de la prise 2 à 2 300 W (valeur d’origine), puis réarmez la prise (bouton « Réarmer »).', check: function (s) { return cfg() && cfg().outlets[1].maxPower >= 1500 && !s.outlets[1].latched; }, hints: ['Le bouton « Réarmer » apparaît sur la carte de la prise verrouillée (onglet Maison).'] }
       ]
     },
     {
