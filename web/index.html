@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e7c66">
+<meta name="description" content="EnergyLab : kit pédagogique IoT pour apprendre la mesure et la gestion de l'énergie électrique dans une maison.">
+<title>EnergyLab — Kit pédagogique énergie</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <a class="brand" href="#/maison" aria-label="Accueil EnergyLab">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#0e7c66"/><path d="M14 32 32 16l18 16v18H14z" fill="#fff"/><path d="M34 24 24 38h8l-2 10 10-15h-8z" fill="#f2a900"/></svg>
+      <span>EnergyLab<small id="kit-name">Kit pédagogique énergie</small></span>
+    </a>
+    <div class="top-chips">
+      <span class="chip power" id="chip-power" title="Puissance totale">⚡ <span id="top-power">-- W</span></span>
+      <span class="chip" id="chip-conn" title="Connexion"><span class="dot"></span><span id="conn-text">Connexion…</span></span>
+      <span class="chip hide-sm" id="chip-clock" title="Heure du kit">🕐 <span id="top-clock">--:--</span></span>
+      <button class="iconbtn" id="btn-alerts" title="Journal et alertes" aria-label="Journal et alertes"></button>
+      <button class="iconbtn" id="btn-profile" title="Profil" aria-label="Profil"></button>
+    </div>
+  </header>
+  <nav class="sidenav" id="sidenav" aria-label="Navigation principale"></nav>
+  <main id="view" tabindex="-1"><div class="loading"><div class="spinner"></div><p>Chargement d'EnergyLab…</p></div></main>
+  <nav class="bottomnav" id="bottomnav" aria-label="Navigation"></nav>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div id="modal-root"></div>
+<noscript><p style="padding:80px 20px">JavaScript est nécessaire pour utiliser EnergyLab.</p></noscript>
+<script src="app.js"></script>
+</body>
+</html>

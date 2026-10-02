@@ -1,0 +1,19 @@
+# Compilation
+firmware/.pio/
+firmware/.vscode/
+tests/native/test_main
+tests/native/test_kit
+tests/native/vmrun
+tests/js/node_modules/
+tests/js/out/
+tests/e2e/node_modules/
+tests/e2e/out/
+tools/mock-kit/node_modules/
+.deps/
+# Généré automatiquement à partir de web/ (tools/embed_web.py)
+firmware/src/web_assets.cpp
+firmware/src/web_assets.h
+# Divers
+.DS_Store
+*.log
+__pycache__/

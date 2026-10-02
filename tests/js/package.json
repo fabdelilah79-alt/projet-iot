@@ -1,0 +1,7 @@
+{
+  "name": "energylab-tests",
+  "private": true,
+  "description": "Tests JavaScript d'EnergyLab (compilateur de blocs, VM, validation croisée)",
+  "scripts": { "test": "node run_all.js" },
+  "devDependencies": { "blockly": "13.3.0", "jsdom": "^27.4.0" }
+}
