@@ -1,6 +1,8 @@
-# EnergyLab - table de partitions (flash 4 Mo, sans OTA)
+# EnergyLab - table de partitions (flash 4 Mo)
+# Disposition compatible avec le téléversement Arduino/PlatformIO, qui écrit boot_app0.bin
+# (données « otadata ») à l'adresse 0xE000. L'application web est intégrée au programme (app0).
 # Name,   Type, SubType, Offset,   Size
-nvs,      data, nvs,     0x9000,   0x6000
-phy_init, data, phy,     0xf000,   0x1000
-factory,  app,  factory, 0x10000,  0x260000
+nvs,      data, nvs,     0x9000,   0x5000
+otadata,  data, ota,     0xe000,   0x2000
+app0,     app,  ota_0,   0x10000,  0x260000
 spiffs,   data, spiffs,  0x270000, 0x190000
