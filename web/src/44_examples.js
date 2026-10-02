@@ -193,23 +193,26 @@
       id: 'veille', level: 2, title: 'Tueur de veille', cat: 'Économiser', arena: 'veille',
       summary: 'Coupe le salon (prise 1) après 5 min d’inactivité si personne n’est là, et le rallume dès qu’une présence est détectée.',
       concepts: ['consommation de veille', 'détection d’inactivité'],
-      explain: 'Les appareils en veille consomment en permanence quelques watts. Sur une année, cela représente plusieurs dizaines de kWh. Le programme utilise la durée d’inactivité (P sous le seuil de veille) et le détecteur de présence.',
+      explain: 'Les appareils en veille (décodeur, console, téléviseur…) consomment en permanence plusieurs watts. Sur une année, cela représente des dizaines de kWh. Au démarrage, le programme règle le seuil de veille de la prise à 20 W : en dessous, la prise est considérée comme inactive. Il utilise ensuite la durée d’inactivité et le détecteur de présence.',
       build: function () {
-        return ws([hat('el_every', { PERIOD: 10 }, null, [
-          S.if_(E.and(E.cmp(E.idle(1), 'GT', E.num(300)), E.not(E.presence())), [S.relay(1, false), S.log('Veille coupée : salon')]),
-          S.if_(E.and(E.presence(), E.state(1, -10)), [S.relay(1, true)])
-        ])]);
+        return ws([
+          hat('el_on_start', null, null, [S.setOutletParam(5, 1, 20), S.log('Seuil de veille du salon : 20 W')], 20, 20),
+          hat('el_every', { PERIOD: 10 }, null, [
+            S.if_(E.and(E.cmp(E.idle(1), 'GT', E.num(300)), E.not(E.presence())), [S.relay(1, false), S.log('Veille coupée : salon')]),
+            S.if_(E.and(E.presence(), E.state(1, -10)), [S.relay(1, true)])
+          ], 20, 170)
+        ]);
       }
     },
     {
       id: 'eclairage', level: 2, title: 'Éclairage intelligent', cat: 'Économiser', arena: 'veille',
       summary: 'Allume la lampe (prise 1) seulement s’il y a quelqu’un et qu’il fait sombre.',
       concepts: ['capteurs', 'logique combinatoire'],
-      explain: 'La décision combine deux capteurs avec l’opérateur « et ». Le délai de présence évite d’éteindre dès qu’on reste immobile.',
+      explain: 'La décision combine deux capteurs avec les opérateurs « et » / « ou ». Piège : la lampe éclaire aussi le capteur de lumière ! Si l’on éteignait dès que la luminosité dépasse le seuil, la lampe clignoterait sans fin. On n’éteint donc que s’il n’y a personne ou s’il fait vraiment jour (seuil + 40 %) : c’est une hystérésis.',
       build: function () {
         return ws([hat('el_every', { PERIOD: 5 }, null, [
-          S.relay(1, false),
-          S.if_(E.and(E.presence(), E.cmp(E.env(5), 'LT', E.param(17))), [S.relay(1, true)])
+          S.if_(E.and(E.presence(), E.cmp(E.env(5), 'LT', E.param(17))), [S.relay(1, true)]),
+          S.if_(E.or(E.not(E.presence()), E.cmp(E.env(5), 'GT', E.arith(E.param(17), 'ADD', E.num(40)))), [S.relay(1, false)])
         ])]);
       }
     },
@@ -226,7 +229,7 @@
       id: 'ia_appareil', level: 4, title: 'IA : priorité à la bouilloire', cat: 'Intelligence',
       summary: 'Si l’IA reconnaît la bouilloire sur la prise 2 et que la limite est dépassée, le chauffage est coupé le temps qu’elle chauffe.',
       concepts: ['apprentissage supervisé', 'k plus proches voisins', 'décision'],
-      explain: 'Entraînez d’abord l’IA dans l’onglet « IA » (exemple « Bouilloire »). Le programme combine la reconnaissance d’appareil (k-NN sur puissance et facteur de puissance) avec une règle de délestage.',
+      explain: 'Entraînez d’abord l’IA dans l’onglet « IA » : apprenez la « Bouilloire » en premier (elle devient l’appareil n°1). Le programme combine la reconnaissance d’appareil (k-NN sur puissance et facteur de puissance) avec une règle de délestage.',
       build: function () {
         return ws([hat('el_every', { PERIOD: 2 }, null, [
           S.ifelse(E.and(E.appliance(2, 1), E.cmp(E.total(), 'GT', E.param(12))), [S.relay(3, false), S.log('Bouilloire détectée : chauffage suspendu')], [S.relay(3, true)])

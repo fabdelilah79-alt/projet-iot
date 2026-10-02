@@ -35,7 +35,7 @@
       this.core = new EL.kitcore.KitCore(this.cfg, this.relays, this.io);
       this.house = new EL.house.House({ seed: opts.seed || 4242, troom: 19, toutMean: 10, toutAmp: 5 });
       this.apps = (opts.apps || DEFAULT_APPS).map(function (a) { return a.slice(); });
-      this.apps.forEach(function (ids, k) { self.house.setAppliances(k, ids); });
+      this.apps.forEach(function (ids, k) { self.house.setAppliances(k, ids); self.switchOn(k); });
       this.simMs = 0;
       this.epoch0 = Math.floor(Date.now() / 1000);
       this.speed = 1;
@@ -68,7 +68,7 @@
       if (s.cfg) EL.config.merge(this.cfg, s.cfg);
       if (s.cfg && s.cfg.peda && s.cfg.peda.pin) this.cfg.peda.pin = s.cfg.peda.pin;
       if (s.knn) this.core.knn.load(s.knn);
-      if (s.apps) { this.apps = s.apps; const self = this; this.apps.forEach(function (ids, k) { self.house.setAppliances(k, ids); }); }
+      if (s.apps) { this.apps = s.apps; const self = this; this.apps.forEach(function (ids, k) { self.house.setAppliances(k, ids); self.switchOn(k); }); }
       if (s.research) this.research = s.research;
       if (s.program) {
         this.program = s.program;
@@ -150,9 +150,12 @@
     }
 
     // ------------------------------------------------------------ commandes propres au simulateur
+    // l'appareil branché est en marche : il consomme dès que la prise est allumée
+    switchOn(k) { for (const a of this.house.outlets[k].apps) a.sw = true; }
     setAppliances(k, ids) {
       this.apps[k] = ids.slice();
       this.house.setAppliances(k, ids);
+      this.switchOn(k);
       this.persist();
       this.emitState(true);
     }
@@ -290,7 +293,7 @@
       return Promise.resolve({ loaded: m.loaded, name: m.loaded ? m.prog.name : '', hash: m.loaded ? m.prog.hash : '', status: m.status, err: m.err, autostart: this.cfg.peda.progAutostart, saved: !!this.program, hasBlocks: !!this.programWs });
     }
     getProgramWs() { return Promise.resolve(this.programWs); }
-    getHistory(n) { return Promise.resolve(this.core.hist.list(n || 600).map(function (s) { return { t: s.t, p: s.p.slice(), T: s.temp, H: s.hum, L: s.lum, pr: s.pres, r: s.relays }; })); }
+    getHistory(n) { return Promise.resolve(U.contiguousTail(this.core.hist.list(n || 600)).map(function (s) { return { t: s.t, p: s.p.slice(), T: s.temp, H: s.hum, L: s.lum, pr: s.pres, r: s.relays }; })); }
     getLogs(since) { return Promise.resolve(this.core.logs.filter(function (e) { return e.seq > (since || 0); })); }
     getDays() {
       const t = this.core.today();
@@ -359,12 +362,18 @@
       cfg.tariff.contractW = sc.contractW;
       cfg.peda.perms = 63;
       cfg.hw.buzzerOn = false;
-      sc.outlets.forEach(function (o, k) { cfg.outlets[k].name = o.name; cfg.outlets[k].priority = o.priority; });
+      // la maison virtuelle n'est pas le kit : circuits de 16 A, pas de limite totale du kit (on compte les dépassements du contrat)
+      cfg.safety.maxTotalW = 1e6;
+      cfg.safety.hardMaxOutletW = 3680;
+      sc.outlets.forEach(function (o, k) {
+        Object.assign(cfg.outlets[k], { name: o.name, priority: o.priority, maxPower: 3680, pzemAlarm: 23000 });
+      });
       const relays = new EL.relays.Relays(null);
       const logs = [];
       const io = { beep: function () {}, screenMessage: function () {}, alertScreen: function () {}, pzemResetEnergy: function () {}, pzemSetAlarm: function () {}, configChanged: function () {}, onLog: function (e) { if (logs.length < 400) logs.push(e); } };
       const core = new EL.kitcore.KitCore(cfg, relays, io);
       core.applyOutletConfig();
+      EL.house.pretrainKnn(core.knn, EL.util.rng(99));
       const house = new EL.house.House({ seed: 777, troom: sc.troom, toutMean: sc.tout.mean, toutAmp: sc.tout.amp, presenceMode: 'schedule', schedule: sc.presence });
       sc.outlets.forEach(function (o, k) { house.setAppliances(k, o.apps.map(function (a) { return a.id; })); });
       for (let k = 0; k < 4; k++) relays.force(k, true, 0);

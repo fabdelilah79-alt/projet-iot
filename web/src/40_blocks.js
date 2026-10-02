@@ -14,7 +14,12 @@
   }
   function labelOptions() {
     const o = [['aucun appareil (P < 1 W)', '0'], ['un appareil inconnu', '-1']];
-    for (const l of dyn.labels) o.push([l.name, String(l.id)]);
+    let max = 4;
+    for (const l of dyn.labels) { o.push([l.name, String(l.id)]); if (l.id >= max) max = l.id + 1; }
+    // numéros encore libres : un programme peut viser un appareil avant son apprentissage
+    for (let id = 1; id <= Math.min(max, 16); id++) {
+      if (!dyn.labels.some(function (l) { return l.id === id; })) o.push(['appareil n°' + id + ' (pas encore appris)', String(id)]);
+    }
     return o;
   }
 

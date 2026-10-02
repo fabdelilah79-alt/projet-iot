@@ -42,6 +42,9 @@ struct OutletLive {
   uint8_t failStreak = 0;
   bool shed = false;
   float shedP = 0;
+  double shedAt = 0;          // instant du délestage
+  double retryMs = 120000;    // délai avant un nouvel essai de remise en service
+  double restoredAt = -1e12;  // dernière remise en service par le délestage
   uint8_t overCount = 0;
   char latchReason[64] = {0};
   double idleS = 0;
@@ -172,6 +175,7 @@ class KitCore : public vm::Hal {
   long dayKey_ = -1;
   double peakToday_ = 0;
   double shedHold_ = 0;
+  double lastShedCall_ = -1e12;
   double safetyHold_ = 0;
   DaySummary days_[7];
   int dayCount_ = 0;

@@ -168,7 +168,7 @@
         const num = function (x) { return x === '' ? NaN : Number(x); };
         out.push({ t: Number(c[0]), p: [num(c[1]), num(c[2]), num(c[3]), num(c[4])], T: num(c[5]), H: num(c[6]), L: num(c[7]), pr: Number(c[8]), r: Number(c[9]) });
       }
-      return out;
+      return U.contiguousTail(out);
     }
     async getLogs(since) {
       const r = await this.req('GET', '/api/logs?since=' + (since || 0));

@@ -21,16 +21,16 @@
       R.name = h('input.inp.name', { value: U.store.get('ws.name', 'Mon programme'), maxlength: 40, 'aria-label': 'Nom du programme' });
       R.name.addEventListener('input', function () { U.store.set('ws.name', R.name.value); });
       const demo = app.mode === 'demo';
-      R.btnSim = h('button.btn', { title: 'Tester le programme sur la maison virtuelle (jumeau numérique)', onclick: function () { self.run('sim'); } }, [EL.icon('flask'), 'Simuler']);
+      R.btnSim = h('button.btn', { title: 'Tester le programme sur la maison virtuelle (jumeau numérique)', onclick: function () { self.run('sim'); } }, [EL.icon('flask'), h('span.hide-xs', 'Simuler')]);
       R.btnKit = h('button.btn.primary', { onclick: function () { self.run('kit'); } }, [EL.icon('upload'), demo ? 'Exécuter (kit virtuel)' : 'Envoyer au kit']);
-      R.btnStop = h('button.btn', { onclick: function () { self.stop(); } }, [EL.icon('stop'), 'Arrêter']);
+      R.btnStop = h('button.btn', { title: 'Arrêter le programme du kit', onclick: function () { self.stop(); } }, [EL.icon('stop'), h('span.hide-xs', 'Arrêter')]);
       if (demo) R.btnSim.classList.add('hidden');
       main.appendChild(h('div.editor-bar', [
         R.name, R.btnSim, R.btnKit, R.btnStop,
-        h('button.btn', { onclick: function () { self.examples(); } }, [EL.icon('book'), 'Exemples']),
-        h('button.btn', { onclick: function () { self.openMenu(); } }, [EL.icon('folder'), 'Ouvrir']),
-        h('button.btn', { onclick: function () { self.saveMenu(); } }, [EL.icon('save'), 'Enregistrer']),
-        h('button.btn', { onclick: function () { self.showCode(); } }, [EL.icon('code'), 'Code']),
+        h('button.btn', { title: 'Programmes d’exemple', onclick: function () { self.examples(); } }, [EL.icon('book'), h('span.hide-xs', 'Exemples')]),
+        h('button.btn', { title: 'Ouvrir un programme', onclick: function () { self.openMenu(); } }, [EL.icon('folder'), h('span.hide-xs', 'Ouvrir')]),
+        h('button.btn', { title: 'Enregistrer le programme', onclick: function () { self.saveMenu(); } }, [EL.icon('save'), h('span.hide-xs', 'Enregistrer')]),
+        h('button.btn', { title: 'Voir le code produit par les blocs', onclick: function () { self.showCode(); } }, [EL.icon('code'), h('span.hide-xs', 'Code')]),
         h('button.btn.ghost', { title: 'Tout effacer', onclick: function () { self.clearWs(); } }, EL.icon('trash'))
       ]));
       R.area = h('div#blockly-area', [h('div#blockly-div'), h('div.loading', [h('div.spinner'), h('p', 'Chargement des blocs…')])]);
@@ -161,6 +161,7 @@
       if (!r.ok) { EL.toast('Le programme contient des erreurs', 'bad'); return; }
       this.target = target;
       U.store.set('ws.target', target);
+      this.R.btnStop.title = target === 'sim' ? 'Arrêter la simulation' : 'Arrêter le programme du kit';
       this.consoleLines = [];
       U.clear(this.R.console);
       const wsJson = root.Blockly.serialization.workspaces.save(this.ws);
@@ -324,6 +325,8 @@
       if (!ex || !this.ws) return;
       this.ws.clear();
       root.Blockly.serialization.workspaces.load(ex.build(), this.ws);
+      this.ws.cleanUp(); // range les scripts en colonne, sans chevauchement
+      this.ws.scrollCenter();
       this.R.name.value = ex.title.slice(0, 40);
       U.store.set('ws.name', this.R.name.value);
       this.saveLocal();

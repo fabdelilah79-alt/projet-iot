@@ -229,6 +229,19 @@ table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: ta
 @media (min-width: 1200px) { .editor-layout { grid-template-columns: minmax(0, 1fr) 360px; } }
 .editor-bar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
 .editor-bar .name { max-width: 220px; }
+@media (max-width: 600px) {
+  .hide-xs { display: none; }
+  .editor-bar .name { max-width: none; flex: 1 1 100%; }
+  .blocklyToolboxCategoryLabel { font-size: 12px !important; }
+  .blocklyToolboxCategory { padding-right: 4px !important; }
+}
+@media (max-width: 700px) { .hide-sm { display: none !important; } }
+@media (max-width: 520px) {
+  .brand small, #conn-text { display: none; }
+  .chip { padding: 4px 8px; }
+  .top-chips { gap: 4px; }
+  .iconbtn { width: 34px; }
+}
 #blockly-area { height: calc(100vh - var(--top-h) - var(--bottom-h) - 170px); min-height: 380px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #f7f8fa; position: relative; }
 @media (min-width: 960px) { #blockly-area { height: calc(100vh - var(--top-h) - 150px); } }
 #blockly-div { position: absolute; inset: 0; }

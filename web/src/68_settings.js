@@ -182,7 +182,7 @@
         const p = await app.kit.getPzem();
         if (!p || !p.stats) return;
         msg.textContent = p.msg || 'Prêt.';
-        msg.className = 'note' + (p.busy ? '' : (/Échec|Aucun/.test(p.msg) ? '.bad' : (/Réussi|trouvés/.test(p.msg) ? '.ok' : '')));
+        msg.className = 'note' + (p.busy ? '' : (/Échec|Aucun/.test(p.msg) ? ' bad' : (/Réussi|trouvés/.test(p.msg) ? ' ok' : '')));
         if (p.busy) setTimeout(poll, 800);
         U.clear(stats);
         stats.appendChild(h('table.tbl', [h('thead', h('tr', ['Prise / adresse', 'Lectures OK', 'Erreurs', 'Dernier état', 'Seuil d’alarme lu'].map(function (t, i) { return h('th' + (i ? '.num' : ''), t); }))),

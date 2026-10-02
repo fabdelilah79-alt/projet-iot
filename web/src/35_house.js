@@ -18,6 +18,7 @@
     fan: { name: 'Ventilateur 45 W', icon: '🌀', cat: 'moteur (inductif)', model: 'simple', P: 45, pf: 0.76, noise: 0.03 },
     fridge: { name: 'Réfrigérateur', icon: '🧊', cat: 'compresseur (inductif)', model: 'fridge', P: 110, pf: 0.66, standby: 1.5, standbyPf: 0.4, inrush: 550 },
     charger: { name: 'Chargeur de téléphone', icon: '🔋', cat: 'électronique', model: 'charger', P: 10, pf: 0.55, full: 5400, trickle: 1.2, standby: 0.3, standbyPf: 0.3 },
+    tvbox: { name: 'Décodeur TV + console', icon: '🎮', cat: 'électronique', model: 'standby', P: 35, pf: 0.6, standby: 14, standbyPf: 0.45, noise: 0.1 },
     tv: { name: 'Téléviseur', icon: '📺', cat: 'électronique', model: 'standby', P: 85, pf: 0.95, standby: 1.5, standbyPf: 0.3, noise: 0.08 },
     laptop: { name: 'Ordinateur portable', icon: '💻', cat: 'électronique', model: 'standby', P: 60, pf: 0.62, standby: 0.6, standbyPf: 0.3, noise: 0.15 },
     washer: { name: 'Lave-linge', icon: '🧺', cat: 'mixte (résistance + moteur)', model: 'program', phases: [{ d: 900, P: 2000, pf: 1.0 }, { d: 2400, P: 230, pf: 0.68, noise: 0.25 }, { d: 600, P: 420, pf: 0.8, noise: 0.15 }], standby: 1, standbyPf: 0.4 },
@@ -146,8 +147,8 @@
       this.voltageNominal = 230;
       this.hum = 45;
       this.lightExtra = 0;
-      this.R = 0.015;      // °C/W (isolation)
-      this.C = 7.2e5;      // J/°C (inertie) : constante de temps R·C = 3 h
+      this.R = 0.02;       // °C/W (déperditions de la pièce : 50 W/°C)
+      this.C = 2.0e6;      // J/°C (inertie air + murs + meubles) : constante de temps R·C ≈ 11 h
       this.ctTurns = [1, 1, 1, 1];
     }
     setAppliances(k, ids) {
@@ -243,23 +244,23 @@
   const SCENARIOS = {
     hiver: {
       name: "Journée d'hiver en famille",
-      desc: 'Chauffage le matin et le soir, bouilloire, lave-linge lancé à 18 h 30 (à terminer avant 7 h), chauffe-eau, télévision. Tarif heures pleines / heures creuses, puissance souscrite 2 500 W.',
+      desc: 'Convecteur allumé le soir et laissé en marche toute la nuit, lampe souvent oubliée, bouilloire, lave-linge lancé à 18 h 30 (à terminer avant 7 h), chauffe-eau, télévision. Tarif heures pleines / heures creuses, puissance souscrite 2 500 W.',
       tout: { mean: 8, amp: 5 }, troom: 18,
       tariff: { hpHc: true, priceHP: 1.6, priceHC: 0.9, hcStart: 22 * 60, hcEnd: 6 * 60 }, contractW: 2500,
-      presence: [[0, 7 * 60 + 45], [12 * 60, 13 * 60 + 30], [17 * 60 + 30, 24 * 60]],
+      presence: [[6 * 60 + 30, 7 * 60 + 45], [12 * 60, 13 * 60 + 30], [17 * 60 + 30, 23 * 60]], // éveillés à la maison
       outlets: [
         { name: 'Salon', priority: 2, apps: [{ id: 'lamp_halo', when: 'dark-presence' }, { id: 'tv', on: [[19 * 60, 22 * 60 + 30]] }] },
         { name: 'Cuisine', priority: 1, apps: [{ id: 'fridge', auto: true }, { id: 'kettle', starts: [7 * 60, 12 * 60 + 30, 17 * 60 + 45] }, { id: 'microwave', starts: [12 * 60 + 15, 19 * 60 + 30] }] },
-        { name: 'Chambre', priority: 4, apps: [{ id: 'heater', on: [[6 * 60, 7 * 60 + 45], [17 * 60 + 30, 23 * 60]] }, { id: 'charger', on: [[22 * 60, 24 * 60], [0, 6 * 60]] }] },
+        { name: 'Chambre', priority: 4, apps: [{ id: 'heater', on: [[0, 7 * 60 + 45], [17 * 60 + 30, 24 * 60]] }, { id: 'charger', on: [[22 * 60, 24 * 60], [0, 6 * 60]] }] },
         { name: 'Buanderie', priority: 3, apps: [{ id: 'washer', starts: [18 * 60 + 30], deadline: 31 * 60 }, { id: 'water_heater', auto: true, draws: [[7 * 60, 18], [20 * 60 + 30, 18]] }] }
       ]
     },
     pointe: {
       name: 'Soirée de pointe',
-      desc: 'Beaucoup d’appareils en même temps entre 18 h et 21 h : idéal pour tester le délestage et l’écrêtage de pointe. Puissance souscrite 2 000 W.',
+      desc: 'Beaucoup d’appareils en même temps entre 18 h et 21 h : idéal pour tester le délestage et l’écrêtage de pointe. Puissance souscrite 2 500 W.',
       tout: { mean: 12, amp: 4 }, troom: 19,
-      tariff: { hpHc: false, priceHP: 1.2, priceHC: 0.9, hcStart: 22 * 60, hcEnd: 6 * 60 }, contractW: 2000,
-      presence: [[0, 8 * 60], [17 * 60, 24 * 60]],
+      tariff: { hpHc: false, priceHP: 1.2, priceHC: 0.9, hcStart: 22 * 60, hcEnd: 6 * 60 }, contractW: 2500,
+      presence: [[6 * 60 + 30, 8 * 60], [17 * 60, 23 * 60]],
       outlets: [
         { name: 'Salon', priority: 2, apps: [{ id: 'lamp_led', when: 'dark-presence' }, { id: 'tv', on: [[18 * 60, 23 * 60]] }, { id: 'laptop', on: [[18 * 60 + 30, 21 * 60]] }] },
         { name: 'Cuisine', priority: 1, apps: [{ id: 'fridge', auto: true }, { id: 'kettle', starts: [7 * 60 + 15, 18 * 60 + 10, 20 * 60] }, { id: 'microwave', starts: [18 * 60 + 40, 19 * 60 + 5] }] },
@@ -269,12 +270,12 @@
     },
     veille: {
       name: 'Consommations cachées (veille)',
-      desc: 'Été, sans chauffage : la consommation vient surtout des veilles (TV, ordinateur, chargeurs, box) et de l’éclairage. Idéal pour le « tueur de veille » et l’éclairage intelligent.',
+      desc: 'Été, sans chauffage : la consommation vient surtout des veilles (TV, décodeur, console, ordinateur, chargeurs, box) et de l’éclairage oublié la nuit. Idéal pour le « tueur de veille » et l’éclairage intelligent.',
       tout: { mean: 26, amp: 6 }, troom: 25,
       tariff: { hpHc: false, priceHP: 1.2, priceHC: 0.9, hcStart: 22 * 60, hcEnd: 6 * 60 }, contractW: 3000,
-      presence: [[0, 8 * 60], [13 * 60, 14 * 60], [18 * 60, 24 * 60]],
+      presence: [[6 * 60 + 30, 8 * 60], [13 * 60, 14 * 60], [18 * 60, 23 * 60 + 30]],
       outlets: [
-        { name: 'Salon', priority: 2, apps: [{ id: 'tv', on: [[20 * 60, 22 * 60]] }, { id: 'lamp_cfl', when: 'dark-presence' }] },
+        { name: 'Salon', priority: 2, apps: [{ id: 'tv', on: [[20 * 60, 22 * 60]] }, { id: 'tvbox', on: [[20 * 60, 22 * 60]] }, { id: 'lamp_cfl', when: 'dark-presence' }] },
         { name: 'Cuisine', priority: 1, apps: [{ id: 'fridge', auto: true }, { id: 'microwave', starts: [13 * 60 + 10, 19 * 60 + 45] }] },
         { name: 'Chambre', priority: 4, apps: [{ id: 'fan', on: [[22 * 60, 24 * 60], [0, 6 * 60]] }, { id: 'charger', on: [[23 * 60, 24 * 60], [0, 7 * 60]] }] },
         { name: 'Bureau', priority: 3, apps: [{ id: 'laptop', on: [[18 * 60 + 30, 20 * 60]] }, { id: 'router', auto: true }] }
@@ -318,5 +319,16 @@
     });
   }
 
-  EL.house = { APPLIANCES, makeAppliance, stepAppliance, House, SCENARIOS, applyHabits, inIntervals };
+  // Apprentissage de référence pour l'arène : mêmes numéros que si l'on entraînait l'IA dans cet ordre
+  const KNN_REFERENCE = [['Bouilloire', 'kettle'], ['Convecteur', 'heater'], ['Réfrigérateur', 'fridge'], ['Micro-ondes', 'microwave'],
+    ['Téléviseur', 'tv'], ['Ordinateur portable', 'laptop'], ['Lampe halogène', 'lamp_halo'], ['Fer à repasser', 'iron']];
+  function pretrainKnn(knn, rnd) {
+    for (const ref of KNN_REFERENCE) {
+      const d = APPLIANCES[ref[1]];
+      const id = knn.labelId(ref[0], true);
+      for (let i = 0; i < 3; i++) knn.samples.push({ label: id, p: d.P * (1 + (rnd() - 0.5) * 0.06), pf: Math.min(1, d.pf * (1 + (rnd() - 0.5) * 0.04)) });
+    }
+  }
+
+  EL.house = { KNN_REFERENCE, pretrainKnn, APPLIANCES, makeAppliance, stepAppliance, House, SCENARIOS, applyHabits, inIntervals };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

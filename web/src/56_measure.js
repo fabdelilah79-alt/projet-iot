@@ -21,10 +21,17 @@
     const tQ = svg('text', { 'font-size': 12, 'font-weight': 700, fill: '#ef4444' });
     const tS = svg('text', { 'font-size': 12, 'font-weight': 700, fill: '#10b981', 'text-anchor': 'end' });
     const tPhi = svg('text', { 'font-size': 12, fill: 'var(--muted)' });
-    s.append(arc, P, Q, S, tP, tQ, tS, tPhi);
+    const empty = svg('text', { x: 150, y: 105, 'font-size': 13, fill: 'var(--muted)', 'text-anchor': 'middle' }, 'Aucun courant : allumez la prise et branchez un appareil');
+    const g = svg('g');
+    g.append(arc, P, Q, S, tP, tQ, tS, tPhi);
+    s.append(g, empty);
     return {
       el: s,
       set: function (p, q, sv, phi) {
+        const none = !(sv >= 1);
+        g.style.display = none ? 'none' : '';
+        empty.style.display = none ? '' : 'none';
+        if (none) return;
         const ox = 30, oy = 180;
         let k = 0;
         if (sv > 0 && Number.isFinite(sv)) k = 230 / Math.max(p, q * 1.4, 1);
@@ -54,7 +61,7 @@
     const tu = svg('text', { 'font-size': 12, 'font-weight': 700, fill: '#3b82f6' }, 'U');
     const ti = svg('text', { 'font-size': 12, 'font-weight': 700, fill: '#ef4444' }, 'I');
     s.append(u, i, tu, ti);
-    let phi = 0, angle = 0, last = 0, raf = null;
+    let phi = 0, angle = 0, last = 0, raf = null, hasI = true;
     const draw = function (t) {
       if (!s.isConnected) { raf = null; return; }
       const dt = last ? (t - last) / 1000 : 0;
@@ -62,12 +69,13 @@
       angle += dt * 0.6; // rotation lente (pédagogique : 50 Hz serait trop rapide)
       const ua = angle, ia = angle - phi * Math.PI / 180;
       u.setAttribute('x2', 110 + 90 * Math.cos(ua)); u.setAttribute('y2', 110 - 90 * Math.sin(ua));
+      i.style.display = ti.style.display = hasI ? '' : 'none';
       i.setAttribute('x2', 110 + 65 * Math.cos(ia)); i.setAttribute('y2', 110 - 65 * Math.sin(ia));
       tu.setAttribute('x', 110 + 100 * Math.cos(ua) - 4); tu.setAttribute('y', 114 - 100 * Math.sin(ua));
       ti.setAttribute('x', 110 + 78 * Math.cos(ia) - 4); ti.setAttribute('y', 114 - 78 * Math.sin(ia));
       raf = requestAnimationFrame(draw);
     };
-    return { el: s, set: function (p) { phi = Number.isFinite(p) ? p : 0; if (!raf) raf = requestAnimationFrame(draw); } };
+    return { el: s, set: function (p, current) { phi = Number.isFinite(p) ? p : 0; hasI = current === undefined || current > 0.001; if (!raf) raf = requestAnimationFrame(draw); } };
   }
 
   function waveforms(cv, U0, I0, phiDeg, P) {
@@ -318,7 +326,7 @@
       R.status.textContent = o.latched ? 'protection déclenchée' : (o.online ? (o.on ? 'allumée' : 'éteinte') : 'capteur absent');
       R.status.className = 'badge ' + (o.latched ? 'bad' : (o.online ? (o.on ? 'ok' : '') : 'warn'));
       R.tri.set(o.p || 0, o.q || 0, o.s || 0, o.phi);
-      R.fre.set(o.phi);
+      R.fre.set(o.phi, o.i);
       waveforms(R.wave, o.u, o.i, o.phi, o.p);
       // formules
       U.clear(R.formulas);

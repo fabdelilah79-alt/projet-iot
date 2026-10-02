@@ -2,6 +2,8 @@
  * Utilisé par le simulateur (jumeau numérique) et le kit virtuel de démonstration. */
 (function (root) {
   'use strict';
+  // délestage : premier nouvel essai de remise en service après 2 min, puis délai doublé (max 15 min)
+  const SHED_RETRY_MS = 120000, SHED_RETRY_MAX_MS = 900000, SHED_ABANDON_MS = 30000;
   const EL = root.EL = root.EL || {};
   const NOUT = 4;
   const LG = { INFO: 0, OK: 1, WARN: 2, ALERT: 3, PROG: 4 };
@@ -11,7 +13,7 @@
     return {
       u: NaN, i: NaN, p: NaN, s: NaN, q: NaN, pf: NaN, f: NaN, phi: NaN, eCounterKWh: NaN,
       eTodayWh: 0, costToday: 0, online: false, alarm: false, okCount: 0, errCount: 0, failStreak: 0,
-      shed: false, shedP: 0, overCount: 0, latchReason: '', idleS: 0, appliance: 0, applianceDist: NaN,
+      shed: false, shedP: 0, shedAt: 0, retryMs: SHED_RETRY_MS, restoredAt: -1e12, overCount: 0, latchReason: '', idleS: 0, appliance: 0, applianceDist: NaN,
       buf: [], rawP: NaN, last5: []
     };
   }
@@ -41,6 +43,7 @@
       this.dayKey = -1;
       this.peakToday = 0;
       this.shedHold = 0;
+      this.lastShedCall = -1e12;
       this.safetyHold = 0;
       this.days = [];
       this.logs = [];
@@ -173,6 +176,8 @@
     }
 
     tick1s(now) {
+      // délestage abandonné par le programme : les prises redeviennent pilotables
+      if (now - this.lastShedCall > SHED_ABANDON_MS) for (const o of this.out) o.shed = false;
       let dt = this.lastSec < 0 ? 1 : (now - this.lastSec) / 1000;
       if (dt > 5) dt = 5;
       if (dt < 0) dt = 0;
@@ -229,6 +234,7 @@
 
     shedStep(lim, now) {
       if (!(lim > 0)) return;
+      this.lastShedCall = now;
       if (now < this.shedHold) return;
       const SRC = EL.relays.SRC;
       let tot = 0;
@@ -246,6 +252,9 @@
         const o = this.out[best];
         o.shedP = o.p;
         o.shed = true;
+        // remise en service récente qui échoue : on attend plus longtemps avant le prochain essai
+        o.retryMs = now - o.restoredAt < 60000 ? Math.min(o.retryMs * 2, SHED_RETRY_MAX_MS) : SHED_RETRY_MS;
+        o.shedAt = now;
         this.rel.request(best, false, SRC.SHED, now);
         this.shedHold = now + 5000;
         this.note(LG.INFO, 'Délestage : P = ' + Math.round(tot) + ' W > ' + Math.round(lim) + ' W, prise ' + (best + 1) + ' (' + this.cfg.outlets[best].name + ', priorité ' + this.cfg.outlets[best].priority + ') coupée');
@@ -257,11 +266,14 @@
           if (best < 0 || pk < this.cfg.outlets[best].priority || (pk === this.cfg.outlets[best].priority && k < best)) best = k;
         }
         if (best < 0) return;
-        if (tot + this.out[best].shedP < 0.9 * lim) {
-          this.out[best].shed = false;
+        const o = this.out[best];
+        const margin = tot + o.shedP < 0.9 * lim;
+        if (margin || (now - o.shedAt >= o.retryMs && tot < 0.7 * lim)) {
+          o.shed = false;
+          o.restoredAt = now;
           this.rel.request(best, true, SRC.SHED, now);
           this.shedHold = now + 5000;
-          this.note(LG.INFO, 'Délestage : marge suffisante, prise ' + (best + 1) + ' (' + this.cfg.outlets[best].name + ') rallumée');
+          this.note(LG.INFO, 'Délestage : ' + (margin ? 'marge suffisante' : 'nouvel essai') + ', prise ' + (best + 1) + ' (' + this.cfg.outlets[best].name + ') rallumée');
         }
       }
     }
@@ -289,6 +301,7 @@
       if (!this.machine.loaded) return;
       for (const o of this.out) o.shed = false;
       this.shedHold = 0;
+      this.lastShedCall = -1e12;
       this.machine.start(now, seed);
       this.programRuns++;
       this.lastStatus = this.machine.status;
@@ -419,7 +432,11 @@
         if (this.warnLimited(WK.DISABLED + k - 1, 60000, this.now)) this.note(LG.WARN, 'Programme : la prise ' + k + ' est désactivée');
         return;
       }
-      this.out[k - 1].shed = false;
+      const o = this.out[k - 1];
+      if (o.shed) {
+        if (on) return; // prise délestée : c'est le délestage qui la rallumera quand la puissance le permettra
+        o.shed = false;
+      }
       const RES = EL.relays.RES;
       const r = this.rel.request(k - 1, on, EL.relays.SRC.PROGRAM, this.now);
       if (r === RES.LATCHED && this.warnLimited(WK.LATCHED + k - 1, 30000, this.now)) this.note(LG.WARN, 'Prise ' + k + ' verrouillée par une protection : réarmez-la avant de la rallumer');

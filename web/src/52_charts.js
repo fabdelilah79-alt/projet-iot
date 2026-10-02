@@ -93,7 +93,10 @@
       const step = niceStep(hi - lo, Math.max(2, Math.floor((H - pad[0] - pad[2]) / 40)));
       lo = Math.floor(lo / step) * step;
       hi = Math.ceil(hi / step) * step;
-      const x0 = pad[3], x1 = W - pad[1], y0 = H - pad[2], y1 = pad[0];
+      // marge gauche adaptée à la plus longue graduation (avec l'unité)
+      let labW = 0;
+      for (let v = lo; v <= hi + step / 2; v += step) labW = Math.max(labW, ctx.measureText(fmtTick(v) + (o.yUnit && v + step > hi + step / 2 ? ' ' + o.yUnit : '')).width);
+      const x0 = Math.max(pad[3], Math.ceil(labW) + 10), x1 = W - pad[1], y0 = H - pad[2], y1 = pad[0];
       const xmin = xs[0], xmax = xs[xs.length - 1] === xs[0] ? xs[0] + 1 : xs[xs.length - 1];
       const X = function (x) { return x0 + (x - xmin) / (xmax - xmin) * (x1 - x0); };
       const Y = function (y) { return y0 - (y - lo) / (hi - lo) * (y0 - y1); };
@@ -106,15 +109,17 @@
       for (let v = lo; v <= hi + step / 2; v += step) {
         const y = Math.round(Y(v)) + 0.5;
         ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
-        ctx.fillText(fmtTick(v) + (o.yUnit && v === hi ? ' ' + o.yUnit : ''), x0 - 6, y);
+        ctx.fillText(fmtTick(v) + (o.yUnit && v + step > hi + step / 2 ? ' ' + o.yUnit : ''), x0 - 6, y);
       }
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       const nx = Math.max(2, Math.floor((x1 - x0) / 90));
       for (let i = 0; i <= nx; i++) {
         const xv = xmin + (xmax - xmin) * i / nx;
+        ctx.textAlign = i === 0 ? 'left' : (i === nx ? 'right' : 'center');
         ctx.fillText(o.xFmt ? o.xFmt(xv) : fmtTick(xv), X(xv), y0 + 6);
       }
+      ctx.textAlign = 'center';
       // séries
       for (let s = vals.length - 1; s >= 0; s--) {
         const arr = vals[s];

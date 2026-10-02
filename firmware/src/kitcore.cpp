@@ -2,9 +2,13 @@
 #include "kitcore.h"
 
 #include <math.h>
+#include <algorithm>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+
+// délestage : premier nouvel essai de remise en service après 2 min, puis délai doublé (max 15 min)
+static const double SHED_RETRY_MS = 120000, SHED_RETRY_MAX_MS = 900000, SHED_ABANDON_MS = 30000;
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -258,6 +262,9 @@ void KitCore::rollover(long day) {
 }
 
 void KitCore::tick1s(double now) {
+  // délestage abandonné par le programme : les prises redeviennent pilotables
+  if (now - lastShedCall_ > SHED_ABANDON_MS)
+    for (int k = 0; k < NOUT; k++) out[k].shed = false;
   double dt = lastSec_ < 0 ? 1.0 : (now - lastSec_) / 1000.0;
   if (dt > 5) dt = 5;
   if (dt < 0) dt = 0;
@@ -326,6 +333,7 @@ void KitCore::safetyTotal(double now) {
 // ------------------------------------------------------------------ délestage
 void KitCore::shedStep(double lim, double now) {
   if (!(lim > 0)) return;
+  lastShedCall_ = now;
   if (now < shedHold_) return;
   // puissance "effective" : les prises délestées comptent pour 0 (même si la coupure est en attente)
   double tot = 0;
@@ -343,8 +351,12 @@ void KitCore::shedStep(double lim, double now) {
         best = k;
     }
     if (best < 0) return;
-    out[best].shedP = out[best].p;
-    out[best].shed = true;
+    OutletLive& o = out[best];
+    o.shedP = o.p;
+    o.shed = true;
+    // remise en service récente qui échoue : on attend plus longtemps avant le prochain essai
+    o.retryMs = now - o.restoredAt < 60000 ? std::min(o.retryMs * 2, SHED_RETRY_MAX_MS) : SHED_RETRY_MS;
+    o.shedAt = now;
     rel_.request(best, false, Relays::SRC_SHED, now);
     shedHold_ = now + 5000;
     note(LG_INFO, "Délestage : P = %.0f W > %.0f W, prise %d (%s, priorité %d) coupée", tot, lim, best + 1,
@@ -358,11 +370,15 @@ void KitCore::shedStep(double lim, double now) {
         best = k;
     }
     if (best < 0) return;
-    if (tot + out[best].shedP < 0.9 * lim) {
-      out[best].shed = false;
+    OutletLive& o = out[best];
+    bool margin = tot + o.shedP < 0.9 * lim;
+    if (margin || (now - o.shedAt >= o.retryMs && tot < 0.7 * lim)) {
+      o.shed = false;
+      o.restoredAt = now;
       rel_.request(best, true, Relays::SRC_SHED, now);
       shedHold_ = now + 5000;
-      note(LG_INFO, "Délestage : marge suffisante, prise %d (%s) rallumée", best + 1, cfg_.out[best].name);
+      note(LG_INFO, "Délestage : %s, prise %d (%s) rallumée", margin ? "marge suffisante" : "nouvel essai", best + 1,
+           cfg_.out[best].name);
     }
   }
 }
@@ -394,6 +410,7 @@ void KitCore::startProgram(double now, uint32_t seed) {
   if (!machine.loaded()) return;
   for (int k = 0; k < NOUT; k++) out[k].shed = false;
   shedHold_ = 0;
+  lastShedCall_ = -1e12;
   machine.start(now, seed);
   programRuns++;
   lastStatus_ = machine.status();
@@ -612,7 +629,10 @@ void KitCore::relay(int k, bool on) {
     if (warnLimited(WK_DISABLED + k - 1, 60000, now_)) note(LG_WARN, "Programme : la prise %d est désactivée", k);
     return;
   }
-  out[k - 1].shed = false;
+  if (out[k - 1].shed) {
+    if (on) return;  // prise délestée : c'est le délestage qui la rallumera quand la puissance le permettra
+    out[k - 1].shed = false;
+  }
   Relays::Result r = rel_.request(k - 1, on, Relays::SRC_PROGRAM, now_);
   if (r == Relays::RL_LATCHED && warnLimited(WK_LATCHED + k - 1, 30000, now_))
     note(LG_WARN, "Prise %d verrouillée par une protection : réarmez-la avant de la rallumer", k);

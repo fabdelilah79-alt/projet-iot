@@ -115,6 +115,16 @@
     });
   }
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  // garde la fin d'un historique à partir du dernier saut d'horloge (mise à l'heure du kit)
+  function contiguousTail(list, maxGap) {
+    maxGap = maxGap || 120;
+    let start = 0;
+    for (let i = 1; i < list.length; i++) {
+      const d = list[i].t - list[i - 1].t;
+      if (d <= 0 || d > maxGap) start = i;
+    }
+    return start ? list.slice(start) : list;
+  }
 
   // ---------------------------------------------------------------- stockage local (jamais bloquant)
   const store = {
@@ -219,7 +229,7 @@
 
   EL.util = {
     h, append, clear, $, $$, svg, fmt, fmtP, fmtE, fmtMoney, fmtDuration, fmtClock, fmtDateTime, dayKeyToDate,
-    pad2, escapeHtml, clamp, store, session, Emitter, download, toCsv, parseCsv, csvEscape, fnv1a, uid, debounce,
+    pad2, escapeHtml, clamp, contiguousTail, store, session, Emitter, download, toCsv, parseCsv, csvEscape, fnv1a, uid, debounce,
     rng, gauss, hasDOM, NB
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

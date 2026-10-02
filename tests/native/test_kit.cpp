@@ -135,6 +135,33 @@ int main() {
   kit.onMeasurement(0, meas(2005, 0.99f), t + 20000);
   kit.tick1s(t + 20000);
   CHECK(kit.out[0].appliance == 1);
+  // délestage : nouvel essai de remise en service, délai doublé après un échec ;
+  // un programme ne rallume pas une prise délestée
+  cfg.out[2].maxPower = 2000;
+  cfg.out[0].priority = 2;
+  t = 1000000;
+  for (int k = 0; k < 4; k++) { kit.rearm(k); kit.userRelay(k, true, Relays::SRC_USER, t); }
+  t += 3000;
+  kit.onMeasurement(0, meas(300), t); kit.onMeasurement(1, meas(200), t);
+  kit.onMeasurement(2, meas(1500), t); kit.onMeasurement(3, meas(100), t);
+  kit.shedStep(2000, t + 100);  // 2100 > 2000 -> prise 3 (priorité 4) délestée
+  CHECK(kit.out[2].shed && !rel.isOn(2));
+  NEAR(kit.out[2].retryMs, 120000, 1e-9);
+  kit.relay(3, true);
+  CHECK(kit.out[2].shed && !rel.isOn(2));
+  kit.onMeasurement(2, meas(0), t + 1000);
+  kit.shedStep(2000, t + 60000);  // 600 + 1500 >= 1800 et délai non écoulé : reste délestée
+  CHECK(kit.out[2].shed);
+  kit.shedStep(2000, t + 120100);  // 2 min écoulées et 600 < 0,7 x 2000 : nouvel essai
+  CHECK(!kit.out[2].shed && rel.isOn(2));
+  kit.onMeasurement(2, meas(1500), t + 121000);
+  kit.shedStep(2000, t + 125200);  // de nouveau en surcharge juste après l'essai : délai doublé
+  CHECK(kit.out[2].shed && !rel.isOn(2));
+  NEAR(kit.out[2].retryMs, 240000, 1e-9);
+  kit.shedStep(2000, t + 325200);  // délai doublé non écoulé
+  CHECK(kit.out[2].shed);
+  kit.tick1s(t + 365200);  // plus d'appel au délestage depuis 40 s : la prise redevient pilotable
+  CHECK(!kit.out[2].shed);
   printf("  journal (%d entrées), dernier : %s\n", kit.logCount(), kit.logAt(0)->msg);
   printf("\n%d vérifications réussies, %d échecs\n", g_pass, g_fail);
   return g_fail ? 1 : 0;

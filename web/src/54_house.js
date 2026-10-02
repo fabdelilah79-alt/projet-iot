@@ -65,6 +65,8 @@
     s.append(total, energy);
     const rooms = [];
     const pos = [[190, 130], [415, 130], [190, 250], [415, 250]];
+    const wires = svg('g');
+    s.appendChild(wires); // les fils passent derrière les pièces
     for (let k = 0; k < 4; k++) {
       const x = pos[k][0], y = pos[k][1];
       const g = svg('g');
@@ -75,12 +77,14 @@
       const p = svg('text', { x: x + 200, y: y + 62, 'text-anchor': 'end', 'font-size': 26, 'font-weight': 800 }, '--');
       const sub = svg('text', { x: x + 200, y: y + 92, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--muted)' }, '');
       const led = svg('circle', { cx: x + 198, cy: y + 18, r: 7, fill: '#b9c2cc' });
-      // fil du compteur vers la pièce
+      // fil du compteur vers la pièce (pièces de droite : par le couloir du haut puis entre les pièces)
       const wy = y + 55;
-      const d = 'M132 230 L160 230 L160 ' + wy + ' L' + x + ' ' + wy;
+      const d = x < 300 ? 'M132 230 L160 230 L160 ' + wy + ' L' + x + ' ' + wy
+        : 'M132 230 L160 230 L160 125 L410 125 L410 ' + wy + ' L' + x + ' ' + wy;
       const wire = svg('path', { d: d, class: 'wire' });
       const flow = svg('path', { d: d, class: 'wf', style: 'display:none' });
-      g.append(wire, flow, rect, glow, name, ico, p, sub, led);
+      wires.append(wire, flow);
+      g.append(rect, glow, name, ico, p, sub, led);
       g.style.cursor = 'pointer';
       g.addEventListener('click', function () { location.hash = '#/mesures/' + (k + 1); });
       s.appendChild(g);
@@ -127,6 +131,7 @@
     mount: function (main) {
       const app = EL.app;
       this.refs = {};
+      this.progKey = null;
       const R = this.refs;
       if (app.mode === 'demo') {
         main.appendChild(h('div.demo-banner', [h('b', 'Mode démonstration'), ' — aucun kit détecté : les mesures viennent du jumeau numérique (simulation réaliste). Choisissez les appareils branchés sur chaque prise ci-dessous.']));
@@ -201,9 +206,9 @@
       if (!c || !R) return;
       U.clear(R.legend);
       c.outlets.forEach(function (o, k) {
-        R.outlets[k].name.textContent = (k + 1) + ' · ' + o.name;
+        R.outlets[k].name.textContent = (k + 1) + '\u00a0·\u00a0' + o.name;
         R.outlets[k].ico.textContent = ICONS[o.icon] || '🔌';
-        R.house.rooms[k].name.textContent = (k + 1) + ' · ' + o.name;
+        R.house.rooms[k].name.textContent = (k + 1) + '\u00a0·\u00a0' + o.name;
         R.house.rooms[k].ico.textContent = ICONS[o.icon] || '🔌';
         R.legend.appendChild(h('span', [h('i', { style: { background: HEX[k] } }), o.name]));
         R.outlets[k].el.style.opacity = o.enabled ? '' : '0.45';
