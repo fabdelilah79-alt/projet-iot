@@ -1,0 +1,144 @@
+[
+ {
+  "id": "e1ab000000000001",
+  "type": "tab",
+  "label": "EnergyLab",
+  "disabled": false,
+  "info": "Exemple : lire les mesures du kit EnergyLab et commander la prise 1 par MQTT.\nRemplacez XXXX par l'identifiant de votre kit (affiché dans Réglages > Informations) et réglez l'adresse du courtier."
+ },
+ {
+  "id": "e1ab0000000000b1",
+  "type": "mqtt-broker",
+  "name": "Courtier local",
+  "broker": "localhost",
+  "port": "1883",
+  "clientid": "",
+  "autoConnect": true,
+  "usetls": false,
+  "protocolVersion": "4",
+  "keepalive": "60",
+  "cleansession": true
+ },
+ {
+  "id": "e1ab000000000001",
+  "z": "e1ab000000000001",
+  "type": "mqtt in",
+  "name": "Puissance des prises",
+  "topic": "energylab/+/outlet/+/power",
+  "qos": "0",
+  "datatype": "auto-detect",
+  "broker": "e1ab0000000000b1",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0,
+  "x": 170,
+  "y": 80,
+  "wires": [
+   [
+    "e1ab000000000005"
+   ]
+  ]
+ },
+ {
+  "id": "e1ab000000000002",
+  "z": "e1ab000000000001",
+  "type": "mqtt in",
+  "name": "Puissance totale",
+  "topic": "energylab/+/total/power",
+  "qos": "0",
+  "datatype": "auto-detect",
+  "broker": "e1ab0000000000b1",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0,
+  "x": 160,
+  "y": 140,
+  "wires": [
+   [
+    "e1ab000000000005"
+   ]
+  ]
+ },
+ {
+  "id": "e1ab000000000003",
+  "z": "e1ab000000000001",
+  "type": "inject",
+  "name": "Allumer la prise 1",
+  "props": [
+   {
+    "p": "payload"
+   }
+  ],
+  "repeat": "",
+  "crontab": "",
+  "once": false,
+  "onceDelay": 0.1,
+  "topic": "",
+  "payload": "ON",
+  "payloadType": "str",
+  "x": 170,
+  "y": 220,
+  "wires": [
+   [
+    "e1ab000000000006"
+   ]
+  ]
+ },
+ {
+  "id": "e1ab000000000004",
+  "z": "e1ab000000000001",
+  "type": "inject",
+  "name": "Éteindre la prise 1",
+  "props": [
+   {
+    "p": "payload"
+   }
+  ],
+  "repeat": "",
+  "crontab": "",
+  "once": false,
+  "onceDelay": 0.1,
+  "topic": "",
+  "payload": "OFF",
+  "payloadType": "str",
+  "x": 170,
+  "y": 280,
+  "wires": [
+   [
+    "e1ab000000000006"
+   ]
+  ]
+ },
+ {
+  "id": "e1ab000000000005",
+  "z": "e1ab000000000001",
+  "type": "debug",
+  "name": "Mesures",
+  "active": true,
+  "tosidebar": true,
+  "console": false,
+  "tostatus": true,
+  "complete": "true",
+  "targetType": "full",
+  "statusVal": "payload",
+  "statusType": "msg",
+  "x": 430,
+  "y": 110,
+  "wires": []
+ },
+ {
+  "id": "e1ab000000000006",
+  "z": "e1ab000000000001",
+  "type": "mqtt out",
+  "name": "Commande prise 1",
+  "topic": "energylab/XXXX/outlet/1/set",
+  "qos": "0",
+  "retain": "false",
+  "broker": "e1ab0000000000b1",
+  "x": 440,
+  "y": 250,
+  "wires": []
+ }
+]

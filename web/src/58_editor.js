@@ -43,10 +43,20 @@
         return h('button.btn', { onclick: function () { self.pressButton(i + 1); } }, '🔘 ' + l);
       }));
       R.warnings = h('div');
+      // redémarrage automatique du programme du kit à la mise sous tension
+      R.auto = h('input', { type: 'checkbox', checked: !!(app.config && app.config.peda.progAutostart) });
+      R.auto.addEventListener('change', async function () {
+        const r = await app.kit.programCtl('autostart', R.auto.checked, app.pin);
+        if (!r.ok) { EL.toast(r.msg || 'Refusé', 'bad'); R.auto.checked = !R.auto.checked; return; }
+        EL.track('program_autostart', R.auto.checked);
+        EL.toast(R.auto.checked ? 'Le programme du kit redémarrera à la mise sous tension' : 'Démarrage automatique désactivé', 'ok');
+        EL.refreshConfig();
+      });
       main.appendChild(h('div.editor-layout', [
         R.area,
         h('div.side-panel', [
-          h('div.card', [h('div.card-head', [h('h2', '▶ Exécution'), R.status]), R.warnings, h('div.small.muted', { style: { margin: '6px 0' } }, 'Boutons virtuels (blocs « quand on appuie sur le bouton ») :'), R.buttons]),
+          h('div.card', [h('div.card-head', [h('h2', '▶ Exécution'), R.status]), R.warnings, h('div.small.muted', { style: { margin: '6px 0' } }, 'Boutons virtuels (blocs « quand on appuie sur le bouton ») :'), R.buttons,
+            h('label.check.small', { style: { marginTop: '10px' } }, [R.auto, 'Redémarrer le programme du kit à sa mise sous tension'])]),
           h('div.card', [h('h2', '🖥️ Console'), R.console]),
           h('div.card', [h('h2', '🔢 Variables'), R.vars]),
           h('div.card', [h('h2', '🧪 Maison virtuelle'), R.simPanel])

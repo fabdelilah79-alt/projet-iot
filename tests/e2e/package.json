@@ -1,0 +1,7 @@
+{
+  "name": "energylab-e2e",
+  "private": true,
+  "description": "Tests de l'interface EnergyLab dans Chromium (Playwright) avec le faux kit",
+  "scripts": { "smoke": "node smoke.js", "flows": "node flows.js", "test": "node smoke.js && node flows.js" },
+  "devDependencies": { "playwright": "1.56.1" }
+}

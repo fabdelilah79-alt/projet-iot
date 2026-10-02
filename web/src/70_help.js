@@ -54,7 +54,7 @@
         '<li>Ne pas laisser un appareil chauffant (bouilloire, fer, radiateur) sans surveillance.</li>',
         '<li>Les protections logicielles du kit ne remplacent pas les protections matérielles.</li></ul>',
         '<h2 id="h-cablage">🔧 Câblage (résumé)</h2>',
-        '<p>Le guide complet, avec schémas et photos de repérage, se trouve dans le dossier <code>docs/</code> du projet (fichier <code>02-cablage.md</code>).</p>',
+        '<p>Le guide complet, avec les contrôles à faire avant la mise sous tension, se trouve dans le dossier <code>docs/</code> du projet (fichier <code>02-cablage.md</code>).</p>',
         '<table class="tbl"><thead><tr><th>Élément</th><th>Broche du module</th><th>ESP32</th></tr></thead><tbody>',
         '<tr><td>PZEM-004T ×4 (bus commun)</td><td>TX (via convertisseur de niveau)</td><td>GPIO16 (RX2)</td></tr>',
         '<tr><td></td><td>RX (via convertisseur de niveau)</td><td>GPIO17 (TX2)</td></tr>',

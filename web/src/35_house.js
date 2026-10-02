@@ -147,8 +147,8 @@
       this.voltageNominal = 230;
       this.hum = 45;
       this.lightExtra = 0;
-      this.R = 0.02;       // °C/W (déperditions de la pièce : 50 W/°C)
-      this.C = 2.0e6;      // J/°C (inertie air + murs + meubles) : constante de temps R·C ≈ 11 h
+      this.R = 0.03;       // °C/W (déperditions d'une pièce isolée : 33 W/°C)
+      this.C = 2.0e6;      // J/°C (inertie air + murs + meubles) : constante de temps R·C ≈ 17 h
       this.ctTurns = [1, 1, 1, 1];
     }
     setAppliances(k, ids) {

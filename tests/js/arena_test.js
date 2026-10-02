@@ -49,6 +49,24 @@ function compile(ex) {
   const veille = await run('veille', ['none', 'veille', 'eclairage']);
   CHECK(veille.veille.energyKWh < veille.none.energyKWh - 0.05 && veille.veille.serviceLostMin < 2, 'veille : le tueur de veille économise sans gêne');
   CHECK(veille.eclairage.energyKWh < veille.none.energyKWh - 0.1 && veille.eclairage.serviceLostMin < 2, 'veille : éclairage intelligent (' + veille.eclairage.energyKWh.toFixed(3) + ' kWh, perte ' + veille.eclairage.serviceLostMin.toFixed(1) + ' min)');
+  // le défi final (mission 16) doit rester réalisable : solution de référence pour l'enseignant
+  const { E, S, hat, ws } = EL.examples.builder;
+  const defi = ws([
+    hat('el_every', { PERIOD: 10 }, null, [
+      S.ifelse(E.timeBetween(20, 0, 5, 0), [
+        S.if_(E.cmp(E.env(3), 'LT', E.arith(E.param(15), 'SUB', E.param(16))), [S.relay(3, true)]),
+        S.if_(E.cmp(E.env(3), 'GT', E.arith(E.param(15), 'ADD', E.param(16))), [S.relay(3, false)])
+      ], [S.relay(3, true)])
+    ], 20, 20),
+    hat('el_every', { PERIOD: 30 }, null, [S.ifelse(E.or(E.offpeak(), E.timeBetween(15, 0, 17, 0)), [S.relay(4, true)], [S.relay(4, false)])], 20, 300)
+  ]);
+  const w = new Blockly.Workspace();
+  Blockly.serialization.workspaces.load(defi, w);
+  const cd = EL.compiler.compile(w, 'défi');
+  w.dispose();
+  const rd = (await EL.runArena('hiver', [{ label: 'réf', id: 'none', bc: null }, { label: 'défi', id: '__editor', bc: cd.bc }]));
+  CHECK(rd[1].cost <= rd[0].cost * 0.85 && rd[1].coldDraws === 0 && rd[1].thermalDegH <= rd[0].thermalDegH + 1,
+    'défi final réalisable (coût ' + ((1 - rd[1].cost / rd[0].cost) * 100).toFixed(1) + ' %, inconfort ' + rd[1].thermalDegH.toFixed(2) + ' / réf ' + rd[0].thermalDegH.toFixed(2) + ')');
   console.log('\n' + pass + ' vérifications réussies, ' + fail + ' échecs');
   process.exitCode = fail ? 1 : 0;
 })();

@@ -67,6 +67,17 @@ def main():
         f.write("Adresses de flashage (ESP32, flash 4 Mo, mode DIO 40 MHz)\n")
         for (off, _), name in zip(parts, names):
             f.write(f"{off:>8}  {name}\n")
+    # démonstration hors-ligne : l'application seule, ouvrable avec Chrome/Edge sans kit (mode démonstration)
+    sys.path.insert(0, HERE)
+    import embed_web  # noqa: E402
+    demo = os.path.join(OUT, "demo")
+    shutil.rmtree(demo, ignore_errors=True)
+    for path, data in embed_web.collect().items():
+        dst = os.path.join(demo, *path.strip("/").split("/"))
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        with open(dst, "wb") as f:
+            f.write(data)
+    print("Démonstration hors-ligne :", os.path.join(demo, "index.html"))
     h = hashlib.sha256(open(full, "rb").read()).hexdigest()
     with open(os.path.join(OUT, "SHA256SUMS.txt"), "w", encoding="utf-8") as f:
         f.write(h + "  energylab-esp32-full.bin\n")

@@ -201,13 +201,13 @@
       intro: 'Créez votre propre programme et battez la référence dans l’arène « Journée d’hiver » : coût réduit d’au moins 15 %, sans douche froide et sans dégrader le confort thermique.',
       theory: '<p>Combinez les idées : thermostat, heures creuses, préchauffage, délestage… Testez, mesurez, améliorez : c’est la démarche d’ingénierie.</p>',
       steps: [
-        { type: 'action', text: 'Dans l’arène « Journée d’hiver », comparez « Aucun algorithme » et « Mon programme (éditeur de blocs) ». Votre programme doit réduire le coût d’au moins 15 %, avec 0 douche froide et un inconfort thermique au plus égal à celui de la référence + 0,5 °C·h.', check: function () {
+        { type: 'action', text: 'Dans l’arène « Journée d’hiver », comparez « Aucun algorithme » et « Mon programme (éditeur de blocs) ». Votre programme doit réduire le coût d’au moins 15 %, avec 0 douche froide et un inconfort thermique au plus égal à celui de la référence + 1 °C·h.', check: function () {
           const a = EL.lastArena;
           if (!a || a.scenario !== 'hiver') return false;
           const ref = a.res.find(function (r) { return r.id === 'none'; });
           const mine = a.res.find(function (r) { return r.id === '__editor'; });
-          return !!ref && !!mine && mine.cost <= ref.cost * 0.85 && mine.coldDraws === 0 && mine.thermalDegH <= ref.thermalDegH + 0.5;
-        }, hints: ['Point de départ possible : l’exemple « Gestionnaire d’énergie complet ».', 'Regardez quels indicateurs se dégradent et pourquoi : chauffe-eau, chauffage, lave-linge…'] },
+          return !!ref && !!mine && mine.cost <= ref.cost * 0.85 && mine.coldDraws === 0 && mine.thermalDegH <= ref.thermalDegH + 1;
+        }, hints: ['Point de départ possible : l’exemple « Gestionnaire d’énergie complet ».', 'Regardez quels indicateurs se dégradent et pourquoi : chauffe-eau, chauffage, lave-linge…', 'Le convecteur n’est allumé par les occupants que le matin et le soir : la nuit, un thermostat suffit ; avant leur départ, laissez-le chauffer pour « stocker » de la chaleur.'] },
         { type: 'observe', text: 'Présentez votre solution : principe, résultats (tableau de l’arène) et limites.' }
       ]
     }
